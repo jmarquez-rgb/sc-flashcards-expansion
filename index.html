@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expansion SC Flashcards — Nextiva NCC</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --navy: #0A2540;
+    --navy-deep: #061A2F;
+    --blue: #1E4B8F;
+    --blue-light: #3B6FC4;
+    --orange: #FE6F1A;
+    --orange-soft: #FF8A3D;
+    --ink: #0F1B2D;
+    --muted: #5B6B80;
+    --bg: #F4F6FA;
+    --card: #FFFFFF;
+    --border: #E3E8F0;
+    --shadow: 0 6px 24px rgba(10, 37, 64, 0.10);
+    --shadow-lg: 0 18px 40px rgba(10, 37, 64, 0.18);
+  }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .app {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px 16px 120px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header { padding: 8px 4px 16px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--navy);
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 12px 0 16px;
+  }
+  .category-row {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: none;
+  }
+  .category-row::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .chip.active {
+    background: var(--navy);
+    color: #fff;
+    border-color: var(--navy);
+  }
+  .chip .count {
+    opacity: 0.65;
+    margin-left: 4px;
+    font-weight: 500;
+  }
+  .progress-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .progress-track {
+    flex: 1;
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue), var(--orange));
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+  .stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 0;
+    perspective: 1600px;
+    min-height: 420px;
+  }
+  .card {
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 3 / 4;
+    max-height: 560px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+    cursor: pointer;
+  }
+  @media (max-height: 750px) {
+    .card { aspect-ratio: 4 / 5; }
+  }
+  .card.flipped { transform: rotateY(180deg); }
+  .face {
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+  }
+  .face.front {
+    background: linear-gradient(155deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color: #fff;
+  }
+  .face.back {
+    background: var(--card);
+    color: var(--ink);
+    transform: rotateY(180deg);
+    overflow-y: auto;
+  }
+  .face-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+    flex-shrink: 0;
+  }
+  .face.back .face-header {
+    border-bottom-color: var(--border);
+  }
+  .category-tag {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--orange-soft);
+  }
+  .face.back .category-tag {
+    color: var(--orange);
+  }
+  .card-number {
+    font-size: 12px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 600;
+  }
+  .face.back .card-number { color: var(--muted); }
+  .prompt {
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .prompt-inner { width: 100%; }
+  .flip-hint {
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    flex-shrink: 0;
+    margin-top: 12px;
+  }
+  .answer {
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--ink);
+    flex: 1;
+  }
+  .answer p { margin-bottom: 10px; }
+  .answer p:last-child { margin-bottom: 0; }
+  .answer strong { color: var(--navy); font-weight: 700; }
+  .answer ul, .answer ol {
+    margin: 8px 0 10px 18px;
+    padding-left: 4px;
+  }
+  .answer li { margin-bottom: 6px; }
+  .answer .callout {
+    background: #FFF4EC;
+    border-left: 3px solid var(--orange);
+    padding: 10px 12px;
+    margin: 10px 0;
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  .answer .callout strong { color: var(--orange); }
+  .nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, var(--bg) 70%, rgba(244,246,250,0));
+    padding: 14px 16px 18px;
+    z-index: 20;
+  }
+  .nav-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: 14px;
+    border: none;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    letter-spacing: 0.01em;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-prev, .btn-next {
+    background: var(--card);
+    color: var(--navy);
+    border: 1.5px solid var(--border);
+  }
+  .btn-flip {
+    background: var(--orange);
+    color: #fff;
+    flex: 1.4;
+    box-shadow: 0 6px 16px rgba(254, 111, 26, 0.35);
+  }
+  .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .shuffle-btn {
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .shuffle-btn:active { transform: scale(0.96); }
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  @media (max-width: 480px) {
+    .prompt { font-size: 18px; }
+    .answer { font-size: 14px; }
+    h1 { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="top-row">
+      <h1>Expansion SC Flashcards</h1>
+      <button class="shuffle-btn" id="shuffleBtn">🔀 Shuffle</button>
+    </div>
+    <div class="subtitle">Nextiva NCC · Existing UCaaS customer expansion + Five9-to-NCC migration</div>
+  </header>
+
+  <div class="controls">
+    <div class="category-row" id="categoryRow"></div>
+    <div class="progress-bar">
+      <span id="progressText">1 / 1</span>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <div class="card" id="card">
+      <div class="face front">
+        <div class="face-header">
+          <span class="category-tag" id="frontCat">Category</span>
+          <span class="card-number" id="frontNum">1</span>
+        </div>
+        <div class="prompt"><div class="prompt-inner" id="promptText">Loading…</div></div>
+        <div class="flip-hint">Tap to reveal</div>
+      </div>
+      <div class="face back">
+        <div class="face-header">
+          <span class="category-tag" id="backCat">Category</span>
+          <span class="card-number" id="backNum">1</span>
+        </div>
+        <div class="answer" id="answerText">Loading…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="nav-inner">
+      <button class="btn btn-prev" id="prevBtn">← Prev</button>
+      <button class="btn btn-flip" id="flipBtn">Flip</button>
+      <button class="btn btn-next" id="nextBtn">Next →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CARDS = [
+  // ===== CS / AM DYNAMICS (#1 skill gap) =====
+  {
+    category: "CS Partnership",
+    prompt: "Why is CS / AM partnership the #1 expansion SC skill?",
+    answer: `
+      <p><strong>Because the CSM owns the customer relationship. You're a guest in their account.</strong></p>
+      <p>Unlike new-logo deals where the SC and AE drive the motion, expansion works through the CSM. If the CSM doesn't trust you:</p>
+      <ul>
+        <li>You won't get invited to customer meetings</li>
+        <li>The customer will hear mixed signals</li>
+        <li>Expansion conversations will feel pushy to the customer</li>
+        <li>Renewal health will quietly degrade</li>
+      </ul>
+      <div class="callout"><strong>The mental shift:</strong> You're not selling to the customer — you're equipping the CSM to have better conversations. Partner with them, don't go around them.</div>
+    `
+  },
+  {
+    category: "CS Partnership",
+    prompt: "How do you build trust with a CSM on your first expansion deal?",
+    answer: `
+      <ol>
+        <li><strong>Ask first, sell second.</strong> "Tell me about this customer. What's working? What's fragile?"</li>
+        <li><strong>Respect their context.</strong> They've been on weekly calls with this customer for a year. You haven't. Defer to their read of the relationship.</li>
+        <li><strong>Make them look good.</strong> Bring value the CSM can deliver to the customer — a new feature demo, a benchmark, a reference. Let the CSM introduce it.</li>
+        <li><strong>Never surprise them.</strong> Don't email the customer without looping the CSM. Don't mention pricing without alignment. Don't commit to timelines without checking.</li>
+        <li><strong>Take things off their plate.</strong> Own the technical validation, reporting prep, integration scoping. Let the CSM focus on the relationship.</li>
+      </ol>
+      <div class="callout">A CSM who trusts you will bring you into every expansion opportunity. One who doesn't will route around you.</div>
+    `
+  },
+  {
+    category: "CS Partnership",
+    prompt: "What's the weekly CSM sync that actually works?",
+    answer: `
+      <p><strong>30 minutes. Same time every week. Structured.</strong></p>
+      <ol>
+        <li><strong>Account health check (5 min):</strong> Any red flags? Any relationship changes? Any product issues?</li>
+        <li><strong>Expansion pipeline (10 min):</strong> What opportunities are developing? Who's the buyer? What's the timeline?</li>
+        <li><strong>Next-step planning (10 min):</strong> Which meetings this week need the SC? What prep is needed?</li>
+        <li><strong>Blocker surfacing (5 min):</strong> What's stuck? What do you need from product or leadership?</li>
+      </ol>
+      <div class="callout">A scheduled sync beats ad-hoc Slack threads. It turns expansion from reactive to planned.</div>
+    `
+  },
+  {
+    category: "CS Partnership",
+    prompt: "How do you handle a CSM who's protective of their customer?",
+    answer: `
+      <p><strong>First, understand why.</strong> Protective usually means:</p>
+      <ul>
+        <li>They had a past SC or AE who burned the relationship</li>
+        <li>The customer is fragile (churn risk) and they don't want rocking</li>
+        <li>They don't understand the product you're selling</li>
+        <li>Their comp is renewal-weighted, not expansion-weighted</li>
+      </ul>
+      <p><strong>The moves:</strong></p>
+      <ul>
+        <li><strong>Ask directly:</strong> "I want to make sure I don't step on the relationship. What would you want me to do differently from your last SC partnership?"</li>
+        <li><strong>Offer observer mode first.</strong> Sit in on a CSM call without selling. Learn the customer.</li>
+        <li><strong>Educate the CSM on the product you're trying to expand.</strong> They can't sell what they don't understand.</li>
+        <li><strong>Align on outcomes.</strong> Expansion done right improves renewal health. Make that case explicitly.</li>
+      </ul>
+    `
+  },
+
+  // ===== DISCOVERY IN EXISTING ACCOUNTS =====
+  {
+    category: "Discovery",
+    prompt: "How is discovery in an expansion account different from new-logo?",
+    answer: `
+      <p><strong>You already have the account context. What you don't have is the current pain.</strong></p>
+      <p>Things you already know (or should, via CSM):</p>
+      <ul>
+        <li>Company size, vertical, geography</li>
+        <li>Current Nextiva footprint (seats, products, contract terms)</li>
+        <li>Historical support tickets and product usage</li>
+        <li>Stakeholders and their roles</li>
+      </ul>
+      <p>What you need to discover:</p>
+      <ul>
+        <li>What's changed in their business since they bought Nextiva?</li>
+        <li>What new pain has emerged since the original purchase?</li>
+        <li>Which stakeholders are new since the last engagement?</li>
+        <li>What's driving the expansion conversation right now?</li>
+      </ul>
+      <div class="callout">Don't re-do discovery they've already given you. Do NEW discovery focused on what's changed.</div>
+    `
+  },
+  {
+    category: "Discovery",
+    prompt: "The 5 expansion discovery questions to ask EVERY customer meeting.",
+    answer: `
+      <ol>
+        <li><strong>"What's changed in your business since we first partnered?"</strong> — Growth? Acquisition? New leadership? New markets? All signals for expansion.</li>
+        <li><strong>"Where are you still using a different tool or process that you wish was in Nextiva?"</strong> — Surfaces adjacent product opportunities without pitching.</li>
+        <li><strong>"What's the biggest customer experience problem you're still solving manually?"</strong> — Surfaces automation/AI opportunities.</li>
+        <li><strong>"If you had an extra 10% budget next year, where would you invest it?"</strong> — Tells you their priorities without asking about Nextiva specifically.</li>
+        <li><strong>"Who else in your organization should we be talking to?"</strong> — Expansion often means buying from a different department or stakeholder.</li>
+      </ol>
+      <div class="callout">These 5 work in QBRs, account reviews, and casual check-ins. Ask them regularly.</div>
+    `
+  },
+  {
+    category: "Discovery",
+    prompt: "How do you find expansion opportunities in product usage data?",
+    answer: `
+      <p><strong>Usage data tells you the story the customer won't tell you directly.</strong></p>
+      <p>Look for these signals:</p>
+      <ul>
+        <li><strong>Hitting seat limits:</strong> They're growing — time to talk about tiered pricing or additional seats</li>
+        <li><strong>Not using features they paid for:</strong> Adoption problem → CSM opportunity. Avoid selling more until the current footprint is healthy.</li>
+        <li><strong>Heavy use of specific features:</strong> They're getting value → natural expansion into adjacent features</li>
+        <li><strong>Spiky call volumes:</strong> Seasonality → maybe they need overflow capacity or AI containment</li>
+        <li><strong>Low containment rates on existing IVR:</strong> AI/Dialogflow opportunity</li>
+        <li><strong>High manual disposition rate:</strong> Automation opportunity</li>
+        <li><strong>No SMS/chat usage:</strong> Omnichannel expansion opportunity</li>
+      </ul>
+      <div class="callout">Review usage data monthly. It's the highest-quality pipeline source you have.</div>
+    `
+  },
+  {
+    category: "Discovery",
+    prompt: "What are the 4 expansion trigger events you should watch for?",
+    answer: `
+      <ol>
+        <li><strong>New executive hire.</strong> New VP of CX, new CIO, new COO — they want to make a mark. Expansion window opens.</li>
+        <li><strong>M&A activity.</strong> Acquisition = more seats, more sites, more complexity. Integration conversations create expansion opportunities.</li>
+        <li><strong>Contract renewal approach (6–9 months out).</strong> Time to have the "future state" conversation before commercial negotiation starts.</li>
+        <li><strong>Operational pain event.</strong> Outage with a competitor. Failed integration. Compliance issue. These open doors that were closed last quarter.</li>
+      </ol>
+      <div class="callout">Set alerts for these. Monitor customer LinkedIn, press releases, and CSM notes.</div>
+    `
+  },
+
+  // ===== UC TO NCC (UCaaS → add contact center) =====
+  {
+    category: "UC → NCC",
+    prompt: "Why is a UCaaS-only customer a natural NCC expansion target?",
+    answer: `
+      <p><strong>Because they already have Nextiva's phone system and trust us to run their comms.</strong></p>
+      <p>Structurally, you're not asking them to switch — you're asking them to add. That's a lower-risk conversation than any new-logo deal.</p>
+      <p><strong>Why it works:</strong></p>
+      <ul>
+        <li>They've already vetted Nextiva as a vendor</li>
+        <li>Their existing users know the ecosystem</li>
+        <li>Unified platform is a stronger story for them than fragmenting</li>
+        <li>Commercial relationship is established</li>
+        <li>Implementation is faster — existing Nextiva tenant, existing admin knowledge</li>
+      </ul>
+      <div class="callout">The UCaaS customer is the single highest-win-rate pipeline for expansion SCs. Every one of them is a potential NCC deal.</div>
+    `
+  },
+  {
+    category: "UC → NCC",
+    prompt: "How do you start the NCC conversation with a UCaaS-only customer?",
+    answer: `
+      <p><strong>Don't lead with "have you considered a contact center?" That's lazy and presumes the need.</strong></p>
+      <p><strong>Better openers:</strong></p>
+      <ul>
+        <li><em>"When customers call your main line, what's the experience? Walk me through what happens."</em></li>
+        <li><em>"How are you handling customer support or sales inquiries today? Different team? Different tool?"</em></li>
+        <li><em>"Do you have a dedicated team answering customer calls? How are they organized?"</em></li>
+      </ul>
+      <p>These questions surface whether there's a contact center use case at all — and if so, what tool they're using (if any). You often find customers handling support with spreadsheets, Slack, and ring groups. That's a clear expansion story.</p>
+      <div class="callout">Let the pain reveal itself. Don't create pain that isn't there.</div>
+    `
+  },
+  {
+    category: "UC → NCC",
+    prompt: "What are the 5 signs a UCaaS customer is ready for NCC?",
+    answer: `
+      <ol>
+        <li><strong>They have a dedicated customer-facing team.</strong> Even 10 people doing support/sales inquiries is contact center territory.</li>
+        <li><strong>They're using ring groups or hunt groups for customer calls.</strong> Those are 2005 technology. NCC handles it with routing intelligence.</li>
+        <li><strong>They don't have reporting on call outcomes.</strong> "Who called? What did they want? Was it resolved?" No answers = NCC opportunity.</li>
+        <li><strong>They're using email or chat tools that don't talk to their phone system.</strong> Omnichannel is broken.</li>
+        <li><strong>They're growing.</strong> Call volume up 20%+ year over year means they'll hit operational breakpoints soon.</li>
+      </ol>
+      <div class="callout">Most UCaaS-only customers will check 2–3 of these. That's your opening.</div>
+    `
+  },
+  {
+    category: "UC → NCC",
+    prompt: "The UC → NCC pitch in 3 sentences.",
+    answer: `
+      <p><strong>Say this (out loud, so it sounds natural):</strong></p>
+      <p><em>"You already trust Nextiva for your phones. Adding NCC turns your phone system into a real customer experience platform — routing, reporting, AI, the tools your customer-facing team actually needs. And because you're already on Nextiva, implementation is 30–60 days instead of 90, and your admin already knows the ecosystem."</em></p>
+      <p><strong>Three ideas in three sentences:</strong></p>
+      <ol>
+        <li>Trust is established</li>
+        <li>NCC upgrades what they already have</li>
+        <li>Speed advantage — no new vendor vetting</li>
+      </ol>
+    `
+  },
+  {
+    category: "UC → NCC",
+    prompt: "How do you price the NCC add-on conversation for an existing UCaaS customer?",
+    answer: `
+      <p><strong>Frame it as incremental investment, not a new contract.</strong></p>
+      <ul>
+        <li>Show them the all-in monthly cost of their UCaaS + NCC vs. the alternative of buying CCaaS elsewhere</li>
+        <li>Highlight the reduction in vendor count (from 2 to 1)</li>
+        <li>Quantify the integration tax they AVOID by staying on one platform</li>
+        <li>Offer a phased rollout — start with 20 agents in a pilot, expand as they prove value</li>
+        <li>If contract renewal is coming, bundle NCC into the new commitment and negotiate overall rate</li>
+      </ul>
+      <div class="callout">Existing customers hate "new contract" energy. Make it feel like a natural extension of what they're already paying for.</div>
+    `
+  },
+
+  // ===== FIVE9 TO NCC (the special motion) =====
+  {
+    category: "Five9 → NCC",
+    prompt: "Why does the Five9-to-NCC migration motion exist?",
+    answer: `
+      <p><strong>History:</strong> From 2021 onwards, Nextiva resold Five9 CCaaS to customers who wanted unified UC+CC. Customer paid Nextiva, Five9 powered the contact center, Nextiva managed support.</p>
+      <p><strong>Now:</strong> Nextiva acquired Thrio and built native NCC. Those Five9-on-Nextiva-paper customers have a choice: stay on Five9 (losing the native platform benefits) or migrate to NCC.</p>
+      <p><strong>Why they should migrate to NCC:</strong></p>
+      <ul>
+        <li>True single-platform UC+CC (not a bundled integration)</li>
+        <li>Native agentic AI via Dialogflow CX + Thrio workflows</li>
+        <li>Shared data layer for unified reporting</li>
+        <li>Nextiva's innovation velocity on NCC is faster than Five9's roadmap</li>
+        <li>Simpler admin, single source of truth</li>
+      </ul>
+      <div class="callout">This isn't a competitive deal — the customer is already "Nextiva." The question is which platform runs their contact center.</div>
+    `
+  },
+  {
+    category: "Five9 → NCC",
+    prompt: "The delicate part: how do you NOT burn the Five9 relationship?",
+    answer: `
+      <p><strong>Three rules:</strong></p>
+      <ol>
+        <li><strong>Never trash Five9.</strong> They're a Gartner Leader. They were the right choice when the customer bought. Respect the original decision.</li>
+        <li><strong>Frame as evolution, not replacement.</strong> "The market has evolved. Native platforms now deliver what the integrated model couldn't. We're giving you the next-gen option."</li>
+        <li><strong>Acknowledge Nextiva's co-responsibility.</strong> "We recommended Five9 with you. We also built the next thing. It's our job to bring it to you first."</li>
+      </ol>
+      <div class="callout">Your customer picked Five9 partly on your (Nextiva's) recommendation. Trashing Five9 trashes that decision. Don't.</div>
+    `
+  },
+  {
+    category: "Five9 → NCC",
+    prompt: "What are the 5 reasons a Five9-on-Nextiva customer should migrate to NCC?",
+    answer: `
+      <ol>
+        <li><strong>True native platform.</strong> UC + CC share a data layer, a directory, an admin console. Integration is eliminated, not just smoothed.</li>
+        <li><strong>Agentic AI native.</strong> Dialogflow CX + Thrio gives automation that doesn't require a separate AI bolt-on.</li>
+        <li><strong>Simpler admin.</strong> One console, one permission model, one release schedule.</li>
+        <li><strong>Faster feature velocity.</strong> NCC ships features faster than Five9's enterprise release train.</li>
+        <li><strong>Single commercial relationship.</strong> One contract, one support path, one invoice. No more "is this a Nextiva or Five9 issue?" tickets.</li>
+      </ol>
+      <div class="callout">Every one of these is a Five9-positive statement from 3 years ago that's become a Nextiva-positive statement today.</div>
+    `
+  },
+  {
+    category: "Five9 → NCC",
+    prompt: "What are the 3 biggest migration fears you'll encounter?",
+    answer: `
+      <ol>
+        <li><strong>"We just went live on Five9 18 months ago — we can't go through another migration."</strong></li>
+        <li><strong>"We've customized a lot in Five9. Will it all transfer?"</strong></li>
+        <li><strong>"What if NCC isn't as mature as Five9?"</strong></li>
+      </ol>
+      <p><strong>For each:</strong></p>
+      <ul>
+        <li>Lead with a named migration program. Not "we'll figure it out." Specific methodology, timeline, and Nextiva-delivered PS hours.</li>
+        <li>Run a workflow audit first. Confirm every customization has a path in NCC before committing.</li>
+        <li>Offer a parallel-run period where both platforms operate side-by-side until NCC is proven.</li>
+      </ul>
+    `
+  },
+  {
+    category: "Five9 → NCC",
+    prompt: "Who should own the Five9-to-NCC migration conversation?",
+    answer: `
+      <p><strong>You + the CSM + a dedicated migration PM.</strong></p>
+      <p>This is NOT a standard expansion deal. It requires:</p>
+      <ul>
+        <li><strong>CSM:</strong> Owns the relationship, manages communication, protects renewal health</li>
+        <li><strong>Expansion SC (you):</strong> Technical validation, workflow audit, platform comparison, scope definition</li>
+        <li><strong>Migration PM:</strong> Timeline ownership, risk management, parallel-run orchestration</li>
+        <li><strong>Executive sponsor:</strong> Shows up at kickoff and quarterly reviews. Signals Nextiva takes this seriously.</li>
+      </ul>
+      <div class="callout">If your company doesn't have a dedicated Five9-to-NCC migration program yet, propose one. This is too big a motion to handle ad-hoc per SC.</div>
+    `
+  },
+  {
+    category: "Five9 → NCC",
+    prompt: "When should you NOT push a Five9 customer to migrate?",
+    answer: `
+      <p><strong>Honesty matters here — pushing migration on a bad-fit customer burns the account.</strong></p>
+      <p>Do NOT push migration when:</p>
+      <ul>
+        <li><strong>Their Five9 contract was just renewed.</strong> Wait 12–18 months before the conversation.</li>
+        <li><strong>They've heavily customized Five9 workflows that don't have clean NCC equivalents yet.</strong> Wait for product parity.</li>
+        <li><strong>Renewal health is yellow/red.</strong> Stabilize the relationship first. Don't compound risk.</li>
+        <li><strong>They have genuine Five9-specific use cases NCC can't match.</strong> (Rare, but possible.) Be honest.</li>
+        <li><strong>Their executive sponsor has an emotional attachment to Five9.</strong> Wait for a personnel change.</li>
+      </ul>
+      <div class="callout">A forced migration at the wrong time creates churn risk on both Five9 AND Nextiva. Sometimes the right move is patience.</div>
+    `
+  },
+
+  // ===== CROSS-SELL (adjacent products) =====
+  {
+    category: "Cross-Sell",
+    prompt: "What are the 5 adjacent products to cross-sell into an NCC account?",
+    answer: `
+      <ol>
+        <li><strong>AI / Dialogflow CX agents.</strong> Voice or chat bots for self-service. Highest-impact cross-sell.</li>
+        <li><strong>WEM / QM tools.</strong> Workforce management, quality monitoring, speech analytics.</li>
+        <li><strong>BigQuery + advanced reporting.</strong> Custom dashboards, exec-level KPI views, long-term analytics.</li>
+        <li><strong>Omnichannel expansion.</strong> If they have voice only, add chat, SMS, email. If they have chat, add social.</li>
+        <li><strong>Outbound dialer / campaigns.</strong> If they're only inbound today, outbound opens revenue-generating use cases.</li>
+      </ol>
+      <div class="callout">Cross-sell works best when tied to a specific pain. Don't pitch 5 products — pitch the one that solves their current problem.</div>
+    `
+  },
+  {
+    category: "Cross-Sell",
+    prompt: "How do you cross-sell AI to a customer running basic NCC?",
+    answer: `
+      <p><strong>Don't lead with "AI." Lead with the pain AI solves.</strong></p>
+      <p><strong>Pain-first openers:</strong></p>
+      <ul>
+        <li><em>"Your IVR contains 15% of calls. What would it mean if that was 40%?"</em></li>
+        <li><em>"Your agents spend how long on password resets and order status? What if none of those reached an agent?"</em></li>
+        <li><em>"Your after-hours calls go to voicemail. What if they were resolved instead?"</em></li>
+      </ul>
+      <p>Then introduce the capability:</p>
+      <ul>
+        <li>Show a specific Dialogflow agent handling a specific workflow</li>
+        <li>Benchmark containment improvement from a real Nextiva customer</li>
+        <li>Offer a scoped pilot — one use case, one agent, 30-day measurement</li>
+      </ul>
+      <div class="callout">"AI" is a feature. "40% more calls contained" is an outcome. Lead with the second.</div>
+    `
+  },
+  {
+    category: "Cross-Sell",
+    prompt: "How do you sequence a multi-product cross-sell roadmap?",
+    answer: `
+      <p><strong>Customers buy one thing at a time. Don't stack proposals.</strong></p>
+      <p><strong>Good sequencing:</strong></p>
+      <ol>
+        <li><strong>Phase 1 (now):</strong> The one thing solving their most urgent pain</li>
+        <li><strong>Phase 2 (6 months):</strong> The adjacent product that amplifies Phase 1</li>
+        <li><strong>Phase 3 (12+ months):</strong> The strategic add that completes the story</li>
+      </ol>
+      <p><strong>Example:</strong></p>
+      <ul>
+        <li>Phase 1: Add SMS channel to existing voice</li>
+        <li>Phase 2: Add Dialogflow CX agent across voice and SMS</li>
+        <li>Phase 3: Add BigQuery reporting to see the full journey</li>
+      </ul>
+      <div class="callout">Show them the roadmap. They'll see you as a partner, not a vendor.</div>
+    `
+  },
+
+  // ===== RENEWAL PROTECTION =====
+  {
+    category: "Renewal",
+    prompt: "When should the renewal conversation START?",
+    answer: `
+      <p><strong>9 months before contract end. No exceptions.</strong></p>
+      <p>The renewal cycle:</p>
+      <ul>
+        <li><strong>T-9 months:</strong> Strategic review. Are they getting value? What's the forward roadmap?</li>
+        <li><strong>T-6 months:</strong> Expansion conversation. New use cases. Scope changes.</li>
+        <li><strong>T-3 months:</strong> Commercial negotiation</li>
+        <li><strong>T-1 month:</strong> Sign and celebrate</li>
+      </ul>
+      <p>Customers who get a renewal proposal 60 days out feel like a transaction. Customers who've been in a value conversation for 9 months feel like a partnership.</p>
+      <div class="callout">Start early. Build value. Then renew. Never the other way around.</div>
+    `
+  },
+  {
+    category: "Renewal",
+    prompt: "What are the 5 signals a customer is a renewal risk?",
+    answer: `
+      <ol>
+        <li><strong>Product adoption has flatlined or declined.</strong> They're not using what they bought.</li>
+        <li><strong>Executive sponsor has changed.</strong> New leader = re-evaluation of every vendor.</li>
+        <li><strong>Support ticket volume has spiked.</strong> Frustration is building.</li>
+        <li><strong>CSM calls are being rescheduled or declined.</strong> Disengagement.</li>
+        <li><strong>They're asking for pricing detail unprompted.</strong> They're evaluating alternatives.</li>
+      </ol>
+      <div class="callout">One signal is noise. Two is a yellow flag. Three or more is a renewal at risk — get ahead of it now.</div>
+    `
+  },
+  {
+    category: "Renewal",
+    prompt: "How do you save a renewal that's showing risk signals?",
+    answer: `
+      <ol>
+        <li><strong>Acknowledge directly.</strong> "I want to have an honest conversation about how this is working for you." Customers respect this.</li>
+        <li><strong>Bring an exec.</strong> VP-level sponsorship signals you care.</li>
+        <li><strong>Build a "win-back" plan with specific commitments.</strong> Adoption milestones. Feature requests. Response time improvements.</li>
+        <li><strong>Offer scope changes, not just discounts.</strong> Sometimes the answer is removing a product they don't use, not cutting the price.</li>
+        <li><strong>Accept the truth if they're leaving.</strong> Exit gracefully. Burned bridges cost more long-term than one lost renewal.</li>
+      </ol>
+    `
+  },
+  {
+    category: "Renewal",
+    prompt: "How do you turn a flat renewal into an expansion renewal?",
+    answer: `
+      <p><strong>Create pull, not push.</strong></p>
+      <p>The customer is going to sign something at renewal. Your job is to make sure what they sign is bigger than last year.</p>
+      <p><strong>The moves:</strong></p>
+      <ul>
+        <li>6 months before renewal, introduce new use cases that naturally require more seats or new products</li>
+        <li>Show them what "best-in-class" looks like (reference customers, benchmarks) — not to shame them, but to inspire</li>
+        <li>Bundle the expansion into the renewal commercial — "instead of renewing flat, here's what adding X looks like at [attractive unified price]"</li>
+        <li>Tie expansion to their forward business goals, not to our quota</li>
+      </ul>
+      <div class="callout">Flat renewals are fine. Expansion renewals are a win. The difference is what you do in the 6 months before the conversation.</div>
+    `
+  },
+
+  // ===== BUSINESS CASE =====
+  {
+    category: "Business Case",
+    prompt: "How is the expansion business case different from a new-logo case?",
+    answer: `
+      <p><strong>The baseline is different. You're not comparing to "nothing."</strong></p>
+      <p>New-logo: "Here's the ROI of buying our product."</p>
+      <p>Expansion: "Here's the incremental ROI of buying MORE of our product."</p>
+      <p>You have to quantify:</p>
+      <ul>
+        <li>Value they're already getting from the existing footprint</li>
+        <li>Additional value from the expansion</li>
+        <li>Value lost by NOT expanding (opportunity cost)</li>
+        <li>Operational savings from consolidation (vs. buying elsewhere)</li>
+      </ul>
+      <div class="callout">CFOs scrutinize expansion cases harder than new-logo. They want to know why the original investment wasn't "enough."</div>
+    `
+  },
+  {
+    category: "Business Case",
+    prompt: "What's the expansion ROI framework that works for existing buyers?",
+    answer: `
+      <p><strong>Four components, in this order:</strong></p>
+      <ol>
+        <li><strong>Current state with Nextiva.</strong> "Here's what you've achieved so far: [metric, metric, metric]." Anchor on value delivered.</li>
+        <li><strong>Current gap.</strong> "Here's where you still have manual work / friction / cost." Surface the remaining pain.</li>
+        <li><strong>Future state with expansion.</strong> "Here's what [product] does about that gap, based on customers like you."</li>
+        <li><strong>Incremental investment vs. incremental value.</strong> "Adding this costs $X/year. The value is $Y/year. Here's the math."</li>
+      </ol>
+      <div class="callout">Never start the business case with "here's the new product." Start with what they've already achieved. That's trust-building.</div>
+    `
+  },
+  {
+    category: "Business Case",
+    prompt: "How do you quantify expansion value when the CFO asks for proof?",
+    answer: `
+      <ul>
+        <li><strong>Benchmark from similar customers.</strong> "Companies in your vertical at your size typically see X improvement when they add Y."</li>
+        <li><strong>Use their own metrics as the baseline.</strong> "You told me your AHT is 4:30. Reducing it by 20 seconds at your volume saves $Z/year."</li>
+        <li><strong>Offer a scoped pilot with measurement.</strong> "Let's run this on one queue for 30 days. If the numbers don't hold, we don't expand."</li>
+        <li><strong>Show consolidation savings.</strong> If expansion replaces another tool, quantify what they stop paying for.</li>
+      </ul>
+      <div class="callout">Never use vendor marketing stats in front of a CFO. They've seen them. Use their data or peer benchmarks.</div>
+    `
+  },
+
+  // ===== LAND AND EXPAND =====
+  {
+    category: "Land & Expand",
+    prompt: "What's the multi-year expansion strategy for a strategic account?",
+    answer: `
+      <p><strong>Year 1: Land and deliver.</strong> Focus on implementation success. Build trust. No pushing.</p>
+      <p><strong>Year 2: Expand within the same org.</strong> Add seats. Add channels. Add adjacent features. Turn the champion into an advocate.</p>
+      <p><strong>Year 3: Expand across the org.</strong> Move into adjacent departments, subsidiaries, new geos. The original buyer becomes your reference inside their own company.</p>
+      <p><strong>Year 4+: Strategic partnership.</strong> Co-innovation, roadmap influence, joint case studies. You're a platform, not a vendor.</p>
+      <div class="callout">Strategic accounts are compounding investments. The SC who treats them as one-off deals never builds an expansion flywheel.</div>
+    `
+  },
+  {
+    category: "Land & Expand",
+    prompt: "How do you find the next expansion opportunity inside a multi-site company?",
+    answer: `
+      <p><strong>Map the org, then work the map.</strong></p>
+      <ol>
+        <li><strong>Get an org chart.</strong> The CSM usually has one or can build it.</li>
+        <li><strong>Identify 'sibling' teams.</strong> Other business units, subsidiaries, regional offices — anyone with similar customer-facing work.</li>
+        <li><strong>Ask your champion for intros.</strong> "Who else in the company has a similar challenge? Could you intro me?"</li>
+        <li><strong>Use customer advocacy moments.</strong> Success stories travel internally. QBR wins become talking points in other team meetings.</li>
+        <li><strong>Watch for org changes.</strong> Mergers, re-orgs, new leadership — these create internal expansion doors.</li>
+      </ol>
+      <div class="callout">Expansion isn't just about selling more to the same buyer. It's about finding the next buyer inside the same company.</div>
+    `
+  },
+  {
+    category: "Land & Expand",
+    prompt: "What's the 'internal reference' play for strategic accounts?",
+    answer: `
+      <p><strong>Turn your happiest user into your most valuable internal seller.</strong></p>
+      <ul>
+        <li>Identify the department/team getting the most value from Nextiva</li>
+        <li>Ask them to share their success with a peer team internally</li>
+        <li>Offer to help build their internal business case to expand Nextiva to another department</li>
+        <li>Host an internal "Nextiva success" session at their company — panel with other customers</li>
+        <li>Co-brand content they can share inside their own org</li>
+      </ul>
+      <div class="callout">Internal references close expansion deals faster than external ones. The decision-maker trusts their colleague more than they trust you.</div>
+    `
+  },
+
+  // ===== HABITS =====
+  {
+    category: "Habits",
+    prompt: "What should an expansion SC do every Monday morning?",
+    answer: `
+      <ol>
+        <li><strong>Review your account portfolio.</strong> 15 min. Renewal health, usage trends, support tickets, executive changes.</li>
+        <li><strong>Review CSM notes from last week.</strong> 10 min. What surfaced in customer calls you weren't on?</li>
+        <li><strong>Identify this week's expansion moves.</strong> 10 min. Which accounts need a touch? Which meetings need prep?</li>
+        <li><strong>Prep for the CSM syncs.</strong> 10 min. What do you need from each CSM to advance each opportunity?</li>
+      </ol>
+      <div class="callout">45 minutes. Portfolio awareness before the week starts. This alone puts you ahead of most expansion SCs.</div>
+    `
+  },
+  {
+    category: "Habits",
+    prompt: "What should you review quarterly for every strategic account?",
+    answer: `
+      <ul>
+        <li><strong>Current product footprint.</strong> What do they have?</li>
+        <li><strong>Usage and adoption.</strong> Are they getting value?</li>
+        <li><strong>Stakeholder map.</strong> Who's new, who's gone, who's rising?</li>
+        <li><strong>Competitive risk.</strong> Are competitors in the account? What are they pitching?</li>
+        <li><strong>Expansion roadmap.</strong> What are the next 2–3 expansion plays, and what's the timing?</li>
+        <li><strong>Renewal position.</strong> Green, yellow, or red? What action is needed?</li>
+        <li><strong>Reference potential.</strong> Can they be a reference? For what use case?</li>
+      </ul>
+      <div class="callout">A one-page account plan per strategic account, reviewed quarterly. Don't skip this.</div>
+    `
+  },
+  {
+    category: "Habits",
+    prompt: "What's the expansion SC's reading list?",
+    answer: `
+      <ul>
+        <li><strong>Nextiva product release notes.</strong> New features = new expansion angles.</li>
+        <li><strong>Your customers' press releases and LinkedIn activity.</strong> Know what's happening in their world.</li>
+        <li><strong>CX Today, No Jitter.</strong> Industry trends that affect your conversations.</li>
+        <li><strong>Gartner Peer Insights on competitors.</strong> Know what your customers might hear from them.</li>
+        <li><strong>Internal CS team updates.</strong> What's happening across the broader customer base.</li>
+      </ul>
+      <div class="callout">Expansion SCs who stay informed surface more opportunities. The ones who don't get surprised by churn.</div>
+    `
+  },
+
+  // ===== MINDSET =====
+  {
+    category: "Mindset",
+    prompt: "What's the core mindset difference between new-logo and expansion SC?",
+    answer: `
+      <p><strong>New-logo SC asks: "How do I close this deal?"</strong></p>
+      <p><strong>Expansion SC asks: "How do I grow this relationship over 5 years?"</strong></p>
+      <p>The deal you close today is a starting point, not a finish line. Every decision in an expansion account should be made with the 5-year view.</p>
+      <ul>
+        <li>Overselling today = churn risk tomorrow</li>
+        <li>Winning the renewal battle = losing the expansion war</li>
+        <li>The customer who trusts you brings you more opportunities than the customer who just buys from you</li>
+      </ul>
+      <div class="callout">Play the long game. The compound returns from account health beat any single-quarter win.</div>
+    `
+  },
+  {
+    category: "Mindset",
+    prompt: "What do existing customers buy from you that new customers don't?",
+    answer: `
+      <p><strong>Continuity. Low-risk evolution. Partnership.</strong></p>
+      <p>New customers buy a product. Existing customers buy a relationship with a company that won't let them fail.</p>
+      <p>What they're NOT buying:</p>
+      <ul>
+        <li>A pitch (they've heard it)</li>
+        <li>A demo (they have the product)</li>
+        <li>Competitive differentiation (they already chose you)</li>
+      </ul>
+      <p>What they ARE buying:</p>
+      <ul>
+        <li>Someone who understands their business better today than yesterday</li>
+        <li>A partner who brings them new ideas before they have to ask</li>
+        <li>The confidence that expanding won't break what's already working</li>
+      </ul>
+    `
+  },
+  {
+    category: "Mindset",
+    prompt: "What's the trap that kills expansion SC credibility?",
+    answer: `
+      <p><strong>"Always be selling."</strong></p>
+      <p>In new-logo, aggressive selling is sometimes rewarded. In expansion, it destroys trust.</p>
+      <p>Expansion customers talk. Your reputation across an account follows you into every meeting:</p>
+      <ul>
+        <li>If every call feels like a pitch, they stop taking your calls</li>
+        <li>If you push products they don't need, they stop trusting your recommendations</li>
+        <li>If you prioritize your quota over their health, they find ways to route around you</li>
+      </ul>
+      <p>The expansion SC mindset: <strong>serve first, sell second.</strong> Selling happens when it's the right thing for the customer — not when your quota is behind.</p>
+      <div class="callout">Customers can feel when an SC is quota-driven vs. value-driven. The value-driven SC closes more expansion over time.</div>
+    `
+  }
+];
+
+// ====== APP STATE ======
+let currentCategory = 'All';
+let filteredCards = [...CARDS];
+let currentIndex = 0;
+let isFlipped = false;
+
+const card = document.getElementById('card');
+const promptText = document.getElementById('promptText');
+const answerText = document.getElementById('answerText');
+const frontCat = document.getElementById('frontCat');
+const backCat = document.getElementById('backCat');
+const frontNum = document.getElementById('frontNum');
+const backNum = document.getElementById('backNum');
+const progressText = document.getElementById('progressText');
+const progressFill = document.getElementById('progressFill');
+const categoryRow = document.getElementById('categoryRow');
+
+function getCategories() {
+  const cats = ['All', ...new Set(CARDS.map(c => c.category))];
+  return cats.map(cat => ({
+    name: cat,
+    count: cat === 'All' ? CARDS.length : CARDS.filter(c => c.category === cat).length
+  }));
+}
+
+function renderCategories() {
+  const cats = getCategories();
+  categoryRow.innerHTML = cats.map(c =>
+    `<button class="chip ${c.name === currentCategory ? 'active' : ''}" data-cat="${c.name}">
+      ${c.name}<span class="count">${c.count}</span>
+    </button>`
+  ).join('');
+  categoryRow.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => selectCategory(btn.dataset.cat));
+  });
+}
+
+function selectCategory(cat) {
+  currentCategory = cat;
+  filteredCards = cat === 'All' ? [...CARDS] : CARDS.filter(c => c.category === cat);
+  currentIndex = 0;
+  isFlipped = false;
+  card.classList.remove('flipped');
+  renderCategories();
+  renderCard();
+}
+
+function renderCard() {
+  if (filteredCards.length === 0) return;
+  const c = filteredCards[currentIndex];
+  promptText.textContent = c.prompt;
+  answerText.innerHTML = c.answer;
+  frontCat.textContent = c.category;
+  backCat.textContent = c.category;
+  frontNum.textContent = `${currentIndex + 1} / ${filteredCards.length}`;
+  backNum.textContent = `${currentIndex + 1} / ${filteredCards.length}`;
+  progressText.textContent = `${currentIndex + 1} / ${filteredCards.length}`;
+  progressFill.style.width = `${((currentIndex + 1) / filteredCards.length) * 100}%`;
+  document.getElementById('prevBtn').disabled = currentIndex === 0;
+  document.getElementById('nextBtn').disabled = currentIndex === filteredCards.length - 1;
+  const backFace = document.querySelector('.face.back');
+  if (backFace) backFace.scrollTop = 0;
+}
+
+function flip() {
+  isFlipped = !isFlipped;
+  card.classList.toggle('flipped');
+}
+
+function next() {
+  if (currentIndex < filteredCards.length - 1) {
+    currentIndex++;
+    isFlipped = false;
+    card.classList.remove('flipped');
+    setTimeout(renderCard, 100);
+  }
+}
+
+function prev() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    isFlipped = false;
+    card.classList.remove('flipped');
+    setTimeout(renderCard, 100);
+  }
+}
+
+function shuffle() {
+  for (let i = filteredCards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [filteredCards[i], filteredCards[j]] = [filteredCards[j], filteredCards[i]];
+  }
+  currentIndex = 0;
+  isFlipped = false;
+  card.classList.remove('flipped');
+  renderCard();
+}
+
+card.addEventListener('click', flip);
+document.getElementById('flipBtn').addEventListener('click', (e) => { e.stopPropagation(); flip(); });
+document.getElementById('nextBtn').addEventListener('click', (e) => { e.stopPropagation(); next(); });
+document.getElementById('prevBtn').addEventListener('click', (e) => { e.stopPropagation(); prev(); });
+document.getElementById('shuffleBtn').addEventListener('click', shuffle);
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight') next();
+  else if (e.key === 'ArrowLeft') prev();
+  else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); flip(); }
+});
+
+let touchStartX = 0;
+let touchStartY = 0;
+card.addEventListener('touchstart', (e) => {
+  touchStartX = e.changedTouches[0].screenX;
+  touchStartY = e.changedTouches[0].screenY;
+}, { passive: true });
+card.addEventListener('touchend', (e) => {
+  const dx = e.changedTouches[0].screenX - touchStartX;
+  const dy = e.changedTouches[0].screenY - touchStartY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy)) {
+    if (dx < 0) next();
+    else prev();
+  }
+}, { passive: true });
+
+renderCategories();
+renderCard();
+</script>
+</body>
+</html>
